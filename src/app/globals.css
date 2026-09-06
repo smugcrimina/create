@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-200: #a7f3d0;
+  --color-primary-300: #6ee7b7;
+  --color-primary-400: #34d399;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Hide scrollbar for tabs */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-15px); max-height: 0; }
+  to { opacity: 1; transform: translateY(0); max-height: 500px; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes deadlineFlash {
+  0%, 100% { border-color: #fca5a5; background-color: #fff; }
+  50% { border-color: #ef4444; background-color: #fef2f2; }
+}
+@keyframes deadlineBadgeFlash {
+  0%, 100% { background-color: #fef2f2; color: #dc2626; }
+  50% { background-color: #ef4444; color: #fff; }
+}
+
+@keyframes noteFlash {
+  0%, 100% { color: #ef4444; }
+  50% { color: #b91c1c; background-color: #fef2f2; border-radius: 4px; }
+}
+.note-flash { animation: noteFlash 1.5s ease-in-out infinite; }
+
+.animate-fade-in { animation: fadeIn 0.35s ease-out forwards; }
+.animate-slide-up { animation: slideUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-slide-down { animation: slideDown 0.3s ease-out forwards; }
+.animate-scale-in { animation: scaleIn 0.25s ease-out forwards; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+.shimmer {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Deadline flash on entire card */
+.deadline-flash {
+  animation: deadlineFlash 1.2s ease-in-out infinite;
+}
+.deadline-badge-flash {
+  animation: deadlineBadgeFlash 1s ease-in-out infinite;
+}
+
+/* Card hover */
+.card-hover { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.card-hover:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06); }
+
+/* Button press */
+.btn-press { transition: all 0.2s ease; }
+.btn-press:active { transform: scale(0.97); }
+
+/* Table row animation */
+.table-row-enter { animation: fadeIn 0.3s ease-out forwards; opacity: 0; }
+
+/* Shared input/field styles */
+.input-field {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background-color: #f9fafb;
+  border: 2px solid #f3f4f6;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s;
+}
+.input-field:focus {
+  border-color: #34d399;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+}
+
+.label-sm {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+/* Focus ring */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+/* Responsive font sizing for tablets */
+@media (min-width: 768px) and (max-width: 1024px) {
+  html { font-size: 15px; }
+}
+
+/* For very wide screens (android box etc) */
+@media (min-width: 1600px) {
+  html { font-size: 17px; }
+}
+
+/* ============================================================
+   TEMA SİSTEMİ — 4 tema (Aydınlık, Koyu, Gece Mavisi, Orman)
+   Koyu temalarda yazılar okunur kalsın diye nötr yüzeyler
+   koyulaşır, metin ve vurgular açılır. Aydınlık = varsayılan.
+   ============================================================ */
+
+[data-theme="dark"]   { --bg:#0f172a; --surface:#1e293b; --surface2:#334155; --t1:#f1f5f9; --t2:#cbd5e1; --t3:#94a3b8; --bd:#334155; --inp:#0b1220; }
+[data-theme="navy"]   { --bg:#0a1930; --surface:#122745; --surface2:#1c3a63; --t1:#e8eefc; --t2:#bccdea; --t3:#8ea6cc; --bd:#274a7d; --inp:#08152a; }
+[data-theme="forest"] { --bg:#0c1f17; --surface:#123026; --surface2:#1c4535; --t1:#e9f6ef; --t2:#bad9c8; --t3:#8bb6a0; --bd:#245641; --inp:#0a1a13; }
+
+.theme-dark body { background-color: var(--bg); color: var(--t1); }
+
+/* Sayfa arka plan gradyanı → düz tema rengi */
+.theme-dark .from-slate-50 { background-image: none !important; background-color: var(--bg) !important; }
+
+/* Nötr yüzeyler */
+.theme-dark .bg-white { background-color: var(--surface) !important; }
+.theme-dark .bg-white\/90 { background-color: var(--surface) !important; }
+.theme-dark .bg-gray-50 { background-color: var(--surface2) !important; }
+.theme-dark .bg-gray-100 { background-color: var(--surface2) !important; }
+
+/* Nötr metinler */
+.theme-dark .text-gray-900, .theme-dark .text-gray-800, .theme-dark .text-gray-700 { color: var(--t1) !important; }
+.theme-dark .text-gray-600, .theme-dark .text-gray-500 { color: var(--t2) !important; }
+.theme-dark .text-gray-400, .theme-dark .text-gray-300 { color: var(--t3) !important; }
+
+/* Kenarlıklar */
+.theme-dark .border-gray-50, .theme-dark .border-gray-100, .theme-dark .border-gray-200 { border-color: var(--bd) !important; }
+
+/* Girişler */
+.theme-dark .input-field { background-color: var(--inp) !important; color: var(--t1) !important; border-color: var(--bd) !important; }
+.theme-dark .label-sm { color: var(--t3) !important; }
+.theme-dark ::placeholder { color: var(--t3) !important; opacity: 1; }
+.theme-dark select option { background-color: var(--surface); color: var(--t1); }
+
+/* Vurgu arka planları → koyu şeffaf (açık metin okunsun) */
+.theme-dark .bg-red-50, .theme-dark .bg-red-100 { background-color: rgba(239,68,68,.16) !important; }
+.theme-dark .bg-orange-50, .theme-dark .bg-orange-100 { background-color: rgba(249,115,22,.16) !important; }
+.theme-dark .bg-amber-50, .theme-dark .bg-amber-100 { background-color: rgba(245,158,11,.16) !important; }
+.theme-dark .bg-emerald-50, .theme-dark .bg-emerald-100 { background-color: rgba(16,185,129,.16) !important; }
+.theme-dark .bg-green-50, .theme-dark .bg-green-100 { background-color: rgba(34,197,94,.16) !important; }
+.theme-dark .bg-blue-50, .theme-dark .bg-blue-100 { background-color: rgba(59,130,246,.16) !important; }
+.theme-dark .bg-violet-50, .theme-dark .bg-violet-100 { background-color: rgba(139,92,246,.16) !important; }
+.theme-dark .bg-purple-50, .theme-dark .bg-purple-100 { background-color: rgba(168,85,247,.16) !important; }
+.theme-dark .bg-cyan-50 { background-color: rgba(6,182,212,.16) !important; }
+.theme-dark .bg-pink-50 { background-color: rgba(236,72,153,.16) !important; }
+.theme-dark .bg-rose-50 { background-color: rgba(244,63,94,.16) !important; }
+
+/* Vurgu metinleri → açık ton */
+.theme-dark .text-red-700, .theme-dark .text-red-600, .theme-dark .text-red-500 { color:#fca5a5 !important; }
+.theme-dark .text-orange-700, .theme-dark .text-orange-600 { color:#fdba74 !important; }
+.theme-dark .text-amber-800, .theme-dark .text-amber-700, .theme-dark .text-amber-600 { color:#fcd34d !important; }
+.theme-dark .text-emerald-700, .theme-dark .text-emerald-600 { color:#6ee7b7 !important; }
+.theme-dark .text-green-700, .theme-dark .text-green-600 { color:#86efac !important; }
+.theme-dark .text-blue-700, .theme-dark .text-blue-600, .theme-dark .text-blue-500 { color:#93c5fd !important; }
+.theme-dark .text-violet-700, .theme-dark .text-violet-600 { color:#c4b5fd !important; }
+.theme-dark .text-purple-700, .theme-dark .text-purple-600 { color:#d8b4fe !important; }
+.theme-dark .text-cyan-700 { color:#67e8f9 !important; }
+.theme-dark .text-pink-700 { color:#f9a8d4 !important; }
+.theme-dark .text-rose-700 { color:#fda4af !important; }
