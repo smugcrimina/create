@@ -33,8 +33,8 @@ self.addEventListener("push", (event) => {
 
   const options = {
     body: data.body || "",
-    icon: "/icon-192.png",
-    badge: "/icon-192.png",
+    icon: "/api/icon?size=192",
+    badge: "/api/icon?size=192",
     vibrate: [200, 100, 200, 100, 200],
     tag: data.tag || "istakip-" + Date.now(),
     renotify: true,
@@ -95,8 +95,8 @@ async function checkForNewJobs() {
       if (data.pendingCount && data.pendingCount > 0) {
         await self.registration.showNotification("İş Takip", {
           body: `${data.pendingCount} bekleyen iş var`,
-          icon: "/icon-192.png",
-          badge: "/icon-192.png",
+          icon: "/api/icon?size=192",
+          badge: "/api/icon?size=192",
           tag: "periodic-check",
           data: { url: "/" },
         });

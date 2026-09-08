@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "İş Takip Sistemi",
   description: "Profesyonel İş Yönetim ve Takip Platformu — v2.0 Online & Offline",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/favicon.ico", apple: "/icon-192.png" },
+  icons: { icon: "/api/icon?size=32", apple: "/api/icon?size=192" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -39,8 +39,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-touch-fullscreen" content="yes" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
-        <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+        <link rel="apple-touch-icon" href="/api/icon?size=192" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/api/icon?size=512" />
 
         {/* Android TWA / PWA için */}
         <meta name="theme-color" content="#059669" />
