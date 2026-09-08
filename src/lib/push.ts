@@ -31,8 +31,7 @@ async function getWebPush(): Promise<WebPushLike | null> {
     webpush = wp;
     configured = true;
     return wp;
-  } catch (e) {
-    console.error("web-push yüklenemedi:", e);
+  } catch {
     configured = false;
     return null;
   }
@@ -41,24 +40,14 @@ async function getWebPush(): Promise<WebPushLike | null> {
 async function send(userIds: number[], title: string, body: string): Promise<void> {
   if (userIds.length === 0) return;
   const wp = await getWebPush();
-  if (!wp) {
-    console.warn("Push gönderilemedi: web-push yapılandırılmamış");
-    return;
-  }
+  if (!wp) return;
   try {
     const subs = await db
       .select()
       .from(pushSubscriptions)
       .where(inArray(pushSubscriptions.userId, userIds));
-    
-    if (subs.length === 0) {
-      console.log(`Push gönderilemedi: ${userIds.length} kullanıcı için abonelik yok`);
-      return;
-    }
-
     const payload = JSON.stringify({ title, body });
-    
-    await Promise.allSettled(
+    await Promise.all(
       subs.map(async (s) => {
         try {
           await wp.sendNotification(
@@ -72,14 +61,12 @@ async function send(userIds: number[], title: string, body: string): Promise<voi
               .delete(pushSubscriptions)
               .where(eq(pushSubscriptions.endpoint, s.endpoint))
               .catch(() => {});
-          } else {
-            console.error("Push gönderim hatası:", err);
           }
         }
       })
     );
-  } catch (e) {
-    console.error("Push gönderim hatası:", e);
+  } catch {
+    // tablo yok / başka hata → sessizce geç
   }
 }
 
@@ -94,18 +81,5 @@ export async function pushToEmployees(title: string, body: string, excludeId?: n
     const emps = await db.select({ id: users.id }).from(users).where(eq(users.role, "employee"));
     const ids = emps.map((e) => e.id).filter((id) => id !== excludeId);
     await send(ids, title, body);
-  } catch (e) {
-    console.error("pushToEmployees hatası:", e);
-  }
-}
-
-/** Tüm kullanıcılara push gönder (admin dahil). */
-export async function pushToAll(title: string, body: string): Promise<void> {
-  try {
-    const allUsers = await db.select({ id: users.id }).from(users);
-    const ids = allUsers.map((u) => u.id);
-    await send(ids, title, body);
-  } catch (e) {
-    console.error("pushToAll hatası:", e);
-  }
+  } catch {}
 }

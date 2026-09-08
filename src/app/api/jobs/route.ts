@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { jobs, users, jobCompletions } from "@/db/schema";
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth";
-import { pushToUsers, pushToEmployees } from "@/lib/push";
+import { pushToEmployees } from "@/lib/push";
 
 export async function GET(req: NextRequest) {
   const currentUser = await getCurrentUser();
@@ -39,7 +39,6 @@ export async function GET(req: NextRequest) {
         imageUrl: jobs.imageUrl,
         notes: jobs.notes,
         reminder: jobs.reminder,
-        reminderFiredAt: jobs.reminderFiredAt,
         status: jobs.status,
         createdBy: jobs.createdBy,
         createdAt: jobs.createdAt,
@@ -136,22 +135,9 @@ export async function POST(req: NextRequest) {
       })
       .returning();
 
-    // Push bildirimi gönder
     try {
-      if (body.assignedTo) {
-        // Belirli bir çalışana atandıysa sadece ona gönder
-        await pushToUsers(
-          [body.assignedTo],
-          "📋 Yeni İş Atandı",
-          `${body.companyName} — ${body.jobType}`
-        );
-      } else {
-        // Kimseye atanmadıysa tüm çalışanlara gönder
-        await pushToEmployees("📋 Yeni İş Eklendi", `${body.companyName} — ${body.jobType}`, currentUser.id);
-      }
-    } catch (e) {
-      console.error("Push bildirim hatası:", e);
-    }
+      await pushToEmployees("📋 Yeni İş Eklendi", newJob.companyName, currentUser.id);
+    } catch {}
 
     return NextResponse.json(newJob);
   } catch (error) {

@@ -13,7 +13,7 @@ import ThemeSwitcher from "./ThemeSwitcher";
 
 interface DashboardProps { user: AppUser; onLogout: () => void; }
 type Tab = "jobs" | "add" | "history" | "users" | "logs" | "settings";
-interface Toast { id: number; message: string; type: "success" | "info" | "complete" | "reminder"; }
+interface Toast { id: number; message: string; type: "success" | "info" | "complete"; }
 
 export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>("jobs");
@@ -48,11 +48,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }
     const onFirst = async () => {
       unlockAudio();
-      const granted = await requestNotifyPermission();
-      if (granted) {
-        // Push aboneliğini kur
-        await subscribePush();
-      }
+      await requestNotifyPermission();
+      subscribePush();
       window.removeEventListener("pointerdown", onFirst);
       window.removeEventListener("keydown", onFirst);
     };
@@ -77,13 +74,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     const id = ++tidRef.current;
     setToasts(p => [...p, { id, message: msg, type }]);
     playNotificationSound();
-    showSystemNotification(type === "complete" ? "✅ İş Tamamlandı" : type === "reminder" ? "🔔 Hatırlatma" : "🔔 İş Takip", msg);
+    showSystemNotification(type === "complete" ? "✅ İş Tamamlandı" : "🔔 İş Takip", msg);
     setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 5000);
   }
 
   const prevCompRef = useRef<string | null>(null);
 
-  // Ana polling: yeni işler, tamamlanmalar ve hatırlatmalar
   useEffect(() => {
     const iv = setInterval(async () => {
       try {
@@ -109,7 +105,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               const prevRemLen = parseInt(prevCompRef.current.split("-")[2] || "0");
               if (reminders.length > prevRemLen) {
                 const jobWithReminder = all.find((j: {reminder?:string|null}) => j.reminder);
-                if (jobWithReminder) toast(`🔔 ${jobWithReminder.companyName} — ${jobWithReminder.reminder}`, "reminder");
+                if (jobWithReminder) toast(`🔔 ${jobWithReminder.companyName} — ${jobWithReminder.reminder}`);
               }
             }
 
@@ -151,26 +147,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.role]);
 
-  // Hatırlatma polling: sunucuda bekleyen hatırlatmaları kontrol et ve push gönder
-  useEffect(() => {
-    const reminderIv = setInterval(async () => {
-      try {
-        const res = await fetch("/api/reminders/check", { method: "POST" });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.fired > 0) {
-            // Hatırlatma bildirimi gönderildi
-            for (const name of (data.jobs || [])) {
-              toast(`🔔 ${name}`, "reminder");
-            }
-          }
-        }
-      } catch {}
-    }, 5000); // 5 saniyede bir kontrol et
-    return () => clearInterval(reminderIv);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const appName = s.app_name || "İş Takip";
   const appDesc = s.app_desc || "Profesyonel İş Yönetim Sistemi";
 
@@ -193,10 +169,8 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       <div className="fixed top-2 right-2 z-[100] space-y-2 max-w-[300px]">
         {toasts.map(t => (
           <div key={t.id} className={`animate-slide-down px-3 py-2 rounded-xl shadow-2xl border text-xs font-bold flex items-center gap-2 ${
-            t.type === "complete" ? "bg-green-600 text-white border-green-500" : 
-            t.type === "reminder" ? "bg-amber-500 text-white border-amber-400" :
-            "bg-blue-50 text-blue-700 border-blue-200"
-          }`}>{t.type === "complete" ? "✅" : t.type === "reminder" ? "🔔" : "📋"} {t.message}</div>
+            t.type === "complete" ? "bg-green-600 text-white border-green-500" : "bg-blue-50 text-blue-700 border-blue-200"
+          }`}>{t.type === "complete" ? "✅" : "🔔"} {t.message}</div>
         ))}
       </div>
 

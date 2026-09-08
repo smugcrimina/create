@@ -31,7 +31,6 @@ export function unlockAudio(): void {
 
 export function playNotificationSound(): void {
   try {
-    if (typeof window === "undefined") return;
     if (localStorage.getItem("ist_sound_mute") === "true") return;
     const ctx = getCtx();
     if (!ctx) return;
@@ -54,29 +53,22 @@ export function playNotificationSound(): void {
 }
 
 /** Bildirim iznini iste (kullanıcı hareketinde çağır). */
-export async function requestNotifyPermission(): Promise<boolean> {
+export async function requestNotifyPermission(): Promise<void> {
   try {
-    if (typeof Notification === "undefined") return false;
-    if (Notification.permission === "granted") return true;
-    if (Notification.permission === "denied") return false;
-    const result = await Notification.requestPermission();
-    return result === "granted";
-  } catch {
-    return false;
-  }
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "default") await Notification.requestPermission();
+  } catch {}
 }
 
 /** Sistem bildirimi göster (mobilde service worker üzerinden). Ses ÇALMAZ (ayrı çalınır). */
 export function showSystemNotification(title: string, body: string): void {
   try {
-    if (typeof window === "undefined") return;
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
     const opts: NotificationOptions = {
       body,
       icon: "/icon-192.png",
       badge: "/icon-192.png",
-      tag: "istakip-" + Date.now(),
-      requireInteraction: false,
+      tag: "istakip",
     };
     if ("serviceWorker" in navigator && navigator.serviceWorker) {
       navigator.serviceWorker.ready
@@ -101,66 +93,26 @@ function urlB64ToUint8Array(base64String: string): Uint8Array {
   return out;
 }
 
-/** Web Push aboneliği kur (izin verildiyse ve VAPID anahtarı varsa). */
+/** Web Push aboneliği kur (izin verildiyse ve VAPID anahtarı varsa). Kapalıyken bildirim için. */
 export async function subscribePush(): Promise<void> {
   try {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-    
     const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapid) {
-      console.warn("VAPID public key bulunamadı, push aboneliği yapılamadı");
-      return;
-    }
-
-    // Service worker'ın hazır olmasını bekle
+    if (!vapid) return;
     const reg = await navigator.serviceWorker.ready;
-    
-    // Mevcut aboneliği kontrol et
     let sub = await reg.pushManager.getSubscription();
-    
-    if (sub) {
-      // Mevcut aboneliği sunucuya kaydet
-      await sendSubscriptionToServer(sub);
-      return;
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlB64ToUint8Array(vapid) as unknown as BufferSource,
+      });
     }
-    
-    // Yeni abonelik oluştur
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlB64ToUint8Array(vapid) as unknown as BufferSource,
-    });
-    
-    await sendSubscriptionToServer(sub);
-  } catch (e) {
-    console.error("Push abonelik hatası:", e);
-  }
-}
-
-async function sendSubscriptionToServer(sub: PushSubscription): Promise<void> {
-  try {
-    const subData = sub.toJSON();
     await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(subData),
+      body: JSON.stringify(sub),
     });
-  } catch (e) {
-    console.error("Abonelik kaydedilemedi:", e);
-  }
-}
-
-/** Push aboneliğini yeniden dene (hata durumlarında kullan) */
-export async function retryPushSubscription(): Promise<void> {
-  // Önce mevcut aboneliği iptal et, sonra yeniden oluştur
-  try {
-    if (!("serviceWorker" in navigator)) return;
-    const reg = await navigator.serviceWorker.ready;
-    const existing = await reg.pushManager.getSubscription();
-    if (existing) {
-      await existing.unsubscribe();
-    }
-    await subscribePush();
   } catch {}
 }

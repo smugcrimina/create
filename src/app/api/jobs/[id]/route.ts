@@ -22,43 +22,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.priority !== undefined) upd.priority = body.priority;
     if (body.imageUrl !== undefined) upd.imageUrl = body.imageUrl;
     if (body.notes !== undefined) upd.notes = body.notes;
-    if (body.reminder !== undefined) {
-      upd.reminder = body.reminder;
-      // Yeni hatırlatma eklenirse veya değiştirilirse, firedAt'ı sıfırla
-      upd.reminderFiredAt = null;
-    }
+    if (body.reminder !== undefined) upd.reminder = body.reminder;
     if (body.status !== undefined) upd.status = body.status;
     upd.updatedAt = new Date();
     const [updated] = await db.update(jobs).set(upd).where(eq(jobs.id, parseInt(id))).returning();
 
-    // Hatırlatma eklendiğinde push bildirimi gönder
-    if (body.reminder !== undefined) {
-      if (body.reminder) {
-        const title = "🔔 Hatırlatma Eklendi";
-        const text = `${updated.companyName} — ${body.reminder}`;
-        try {
-          if (updated.assignedTo) {
-            await pushToUsers([updated.assignedTo], title, text);
-          } else {
-            await pushToEmployees(title, text);
-          }
-        } catch (e) {
-          console.error("Reminder push hatası:", e);
-        }
-      }
-    }
-
-    // Atanan kişi değiştiğinde bildirim gönder
-    if (body.assignedTo !== undefined && body.assignedTo !== null) {
+    if (body.reminder) {
+      const title = "🔔 Hatırlatma";
+      const text = `${updated.companyName} — ${body.reminder}`;
       try {
-        await pushToUsers(
-          [body.assignedTo],
-          "📋 İş Atandı",
-          `${updated.companyName} — ${updated.jobType}`
-        );
-      } catch (e) {
-        console.error("Assignment push hatası:", e);
-      }
+        if (updated.assignedTo) await pushToUsers([updated.assignedTo], title, text);
+        else await pushToEmployees(title, text);
+      } catch {}
     }
 
     return NextResponse.json(updated);

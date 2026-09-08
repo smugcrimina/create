@@ -30,7 +30,6 @@ export const jobs = pgTable("jobs", {
   imageUrl: text("image_url"),
   notes: text("notes"),
   reminder: text("reminder"),
-  reminderFiredAt: timestamp("reminder_fired_at"),
   status: jobStatusEnum("status").notNull().default("Bekliyor"),
   createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),

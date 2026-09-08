@@ -7,35 +7,22 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Web Push geldiyse (uygulama kapalıyken bile bildirim)
+// İleride sunucudan Web Push gelirse (uygulama kapalıyken bildirim) burada işlenir
 self.addEventListener("push", (event) => {
   let data = { title: "İş Takip", body: "Yeni bildirim" };
   try {
-    if (event.data) {
-      const parsed = event.data.json();
-      data = {
-        title: parsed.title || "İş Takip",
-        body: parsed.body || "",
-      };
-    }
+    if (event.data) data = event.data.json();
   } catch (e) {}
-  
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
+    self.registration.showNotification(data.title || "İş Takip", {
+      body: data.body || "",
       icon: "/icon-192.png",
       badge: "/icon-192.png",
-      vibrate: [200, 100, 200, 100, 200],
-      tag: "istakip-push",
+      vibrate: [120, 60, 120],
+      tag: "istakip",
       renotify: true,
-      requireInteraction: false,
     })
   );
-});
-
-// Sistem bildirimi gösterildiğinde
-self.addEventListener("notificationshow", (event) => {
-  // Bildirim gösterildiğinde ekstra bir şey yapmaya gerek yok
 });
 
 // Bildirime tıklanınca uygulamayı öne getir / aç
@@ -49,9 +36,4 @@ self.addEventListener("notificationclick", (event) => {
       if (self.clients.openWindow) return self.clients.openWindow("/");
     })
   );
-});
-
-// Fetch event - cache yok, sadece network'ten
-self.addEventListener("fetch", (event) => {
-  // No caching - always go to network
 });
