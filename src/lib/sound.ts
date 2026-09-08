@@ -71,8 +71,8 @@ export function showSystemNotification(title: string, body: string): void {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
     const opts: NotificationOptions = {
       body,
-      icon: "/api/icon?size=192",
-      badge: "/api/icon?size=192",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
       tag: "istakip",
     };
     if ("serviceWorker" in navigator && navigator.serviceWorker) {
