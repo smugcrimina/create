@@ -9,7 +9,7 @@ export async function GET() {
         namespace: "android_app",
         package_name: "app.vercel.create_five_gules.twa",
         sha256_cert_fingerprints: [
-          "92:73:FA:2A:CE:61:DA:BC:F8:A1:5B:E4:DF:67:4B:D2:23:7F:97:DB:D2:E8:DA:8C:19:CF:C7:41:79:63:72:49"
+          "2E:0C:7A:23:4D:82:7D:8C:A5:65:B1:08:48:33:65:32:A2:18:76:75:A9:60:FB:62:B8:EF:7B:97:04:C0:E9:F8"
         ],
       },
     },
