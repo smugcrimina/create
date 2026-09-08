@@ -74,7 +74,7 @@ async function send(
       url: options.url || "/",
       tag: options.tag,
       type: options.type || "info",
-      image: options.image,
+      image: options.image || "/icon-512.png",
       timestamp: Date.now(),
     });
 

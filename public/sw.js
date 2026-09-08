@@ -44,8 +44,8 @@ self.addEventListener("push", (event) => {
     icon: "/icon-192.png",
     badge: "/icon-192.png",
 
-    // WhatsApp tarzı: bildirim genişletilebilir
-    image: data.image || undefined,
+    // WhatsApp tarzı: BÜYÜK İKON (genişletince görünür - kişi avatarı gibi)
+    image: data.image || "/icon-512.png",
 
     // Titreşim pattern'i (WhatsApp benzeri)
     vibrate: [100, 50, 100, 50, 200],
@@ -57,9 +57,9 @@ self.addEventListener("push", (event) => {
     // Kullanıcı etkileşime girene kadar bildirim kalır
     requireInteraction: true,
 
-    // Bildirim içinde gösterilecek aksiyonlar
+    // Bildirim içinde gösterilecek aksiyonlar (WhatsApp: Yanıtla, Okundu)
     actions: [
-      { action: "open", title: `${emoji} Görüntüle` },
+      { action: "open", title: `${emoji} Görüntüle`, icon: "/icon-192.png" },
       { action: "dismiss", title: "Kapat" },
     ],
 
