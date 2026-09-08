@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { AppUser } from "@/app/page";
-import { playNotificationSound, unlockAudio, requestNotifyPermission, showSystemNotification, subscribePush } from "@/lib/sound";
+import { playNotificationSound, unlockAudio, requestNotifyPermission, showSystemNotification, subscribePush, registerPeriodicSync } from "@/lib/sound";
 import JobList from "./JobList";
 import AddJob from "./AddJob";
 import UsersPanel from "./UsersPanel";
@@ -44,12 +44,22 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   // Bildirimler: service worker kaydı + ilk dokunuşta sesi aç ve bildirim izni iste
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((reg) => {
+          // SW güncellemelerini otomatik kontrol et
+          reg.update().catch(() => {});
+          setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000); // Saatte bir
+        })
+        .catch(() => {});
     }
     const onFirst = async () => {
       unlockAudio();
-      await requestNotifyPermission();
-      subscribePush();
+      const perm = await requestNotifyPermission();
+      if (perm === "granted") {
+        await subscribePush();
+        await registerPeriodicSync();
+      }
       window.removeEventListener("pointerdown", onFirst);
       window.removeEventListener("keydown", onFirst);
     };

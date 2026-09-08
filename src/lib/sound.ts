@@ -1,4 +1,4 @@
-/** Bildirim sesi + sistem bildirimi yardımcıları. */
+/** Bildirim sesi + sistem bildirimi + Push abonelik yardımcıları. */
 
 let audioCtx: AudioContext | null = null;
 
@@ -53,11 +53,16 @@ export function playNotificationSound(): void {
 }
 
 /** Bildirim iznini iste (kullanıcı hareketinde çağır). */
-export async function requestNotifyPermission(): Promise<void> {
+export async function requestNotifyPermission(): Promise<NotificationPermission | null> {
   try {
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission === "default") await Notification.requestPermission();
-  } catch {}
+    if (typeof Notification === "undefined") return null;
+    if (Notification.permission === "default") {
+      return await Notification.requestPermission();
+    }
+    return Notification.permission;
+  } catch {
+    return null;
+  }
 }
 
 /** Sistem bildirimi göster (mobilde service worker üzerinden). Ses ÇALMAZ (ayrı çalınır). */
@@ -94,25 +99,75 @@ function urlB64ToUint8Array(base64String: string): Uint8Array {
 }
 
 /** Web Push aboneliği kur (izin verildiyse ve VAPID anahtarı varsa). Kapalıyken bildirim için. */
-export async function subscribePush(): Promise<void> {
+export async function subscribePush(): Promise<PushSubscription | null> {
   try {
-    if (typeof window === "undefined") return;
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (typeof window === "undefined") return null;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+
+    // İzin yoksa iste
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+    if (typeof Notification !== "undefined" && Notification.permission !== "granted") return null;
+
     const vapid = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapid) return;
+    if (!vapid) {
+      console.warn("[Push] NEXT_PUBLIC_VAPID_PUBLIC_KEY ayarlanmamış");
+      return null;
+    }
+
     const reg = await navigator.serviceWorker.ready;
+
+    // Mevcut abonelik var mı kontrol et
     let sub = await reg.pushManager.getSubscription();
+
     if (!sub) {
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array(vapid) as unknown as BufferSource,
+        applicationServerKey: urlB64ToUint8Array(vapid),
       });
     }
-    await fetch("/api/push/subscribe", {
+
+    // Sunucuya kaydet
+    const res = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sub),
     });
+
+    if (!res.ok) {
+      console.error("[Push] Abonelik kaydedilemedi:", res.status);
+      return null;
+    }
+
+    console.log("[Push] Abonelik başarılı");
+    return sub;
+  } catch (err) {
+    console.error("[Push] Abonelik hatası:", err);
+    return null;
+  }
+}
+
+/** Push aboneliğini iptal et. */
+export async function unsubscribePush(): Promise<void> {
+  try {
+    if (!("serviceWorker" in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+  } catch {}
+}
+
+/** Periyodik arka plan senkronizasyonu kaydet (destekleyen tarayıcılarda). */
+export async function registerPeriodicSync(): Promise<void> {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    // @ts-expect-error periodicSync henüz tüm TypeScript tanımlarında yok
+    if (reg.periodicSync) {
+      // @ts-expect-error
+      await reg.periodicSync.register("check-new-jobs", {
+        minInterval: 60 * 60 * 1000, // 1 saat
+      });
+    }
   } catch {}
 }

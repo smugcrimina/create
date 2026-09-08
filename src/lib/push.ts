@@ -7,7 +7,8 @@ interface WebPushLike {
   setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
   sendNotification(
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
-    payload: string
+    payload: string,
+    options?: { TTL?: number; urgency?: string; topic?: string }
   ): Promise<unknown>;
 }
 
@@ -37,7 +38,23 @@ async function getWebPush(): Promise<WebPushLike | null> {
   }
 }
 
-async function send(userIds: number[], title: string, body: string): Promise<void> {
+interface PushOptions {
+  /** Bildirime tıklandığında açılacak URL */
+  url?: string;
+  /** Bildirimi gruplamak için etiket */
+  tag?: string;
+  /** TTL (saniye), bildirimin push sunucusunda bekleyeceği süre */
+  ttl?: number;
+  /** Urgency: very-low, low, normal, high */
+  urgency?: string;
+}
+
+async function send(
+  userIds: number[],
+  title: string,
+  body: string,
+  options: PushOptions = {}
+): Promise<void> {
   if (userIds.length === 0) return;
   const wp = await getWebPush();
   if (!wp) return;
@@ -46,17 +63,32 @@ async function send(userIds: number[], title: string, body: string): Promise<voi
       .select()
       .from(pushSubscriptions)
       .where(inArray(pushSubscriptions.userId, userIds));
-    const payload = JSON.stringify({ title, body });
+
+    const payload = JSON.stringify({
+      title,
+      body,
+      url: options.url || "/",
+      tag: options.tag,
+    });
+
+    const pushOpts = {
+      TTL: options.ttl ?? 86400, // 24 saat (varsayılan) — bildirim bu süre sunucuda bekler
+      urgency: options.urgency || "high",
+      topic: options.tag,
+    };
+
     await Promise.all(
       subs.map(async (s) => {
         try {
           await wp.sendNotification(
             { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-            payload
+            payload,
+            pushOpts
           );
         } catch (err) {
           const code = (err as { statusCode?: number })?.statusCode;
           if (code === 404 || code === 410) {
+            // Abonelik artık geçersiz, sil
             await db
               .delete(pushSubscriptions)
               .where(eq(pushSubscriptions.endpoint, s.endpoint))
@@ -71,15 +103,38 @@ async function send(userIds: number[], title: string, body: string): Promise<voi
 }
 
 /** Belirli kullanıcı id'lerine push bildirimi gönder. */
-export async function pushToUsers(userIds: number[], title: string, body: string): Promise<void> {
-  await send(userIds, title, body);
+export async function pushToUsers(
+  userIds: number[],
+  title: string,
+  body: string,
+  options?: PushOptions
+): Promise<void> {
+  await send(userIds, title, body, options);
 }
 
 /** Tüm çalışanlara push gönder (isteğe bağlı bir id hariç). */
-export async function pushToEmployees(title: string, body: string, excludeId?: number): Promise<void> {
+export async function pushToEmployees(
+  title: string,
+  body: string,
+  excludeId?: number,
+  options?: PushOptions
+): Promise<void> {
   try {
     const emps = await db.select({ id: users.id }).from(users).where(eq(users.role, "employee"));
     const ids = emps.map((e) => e.id).filter((id) => id !== excludeId);
-    await send(ids, title, body);
+    await send(ids, title, body, options);
+  } catch {}
+}
+
+/** Tüm kullanıcılara push gönder. */
+export async function pushToAll(
+  title: string,
+  body: string,
+  options?: PushOptions
+): Promise<void> {
+  try {
+    const allUsers = await db.select({ id: users.id }).from(users);
+    const ids = allUsers.map((e) => e.id);
+    await send(ids, title, body, options);
   } catch {}
 }

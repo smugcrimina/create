@@ -6,7 +6,13 @@ export const metadata: Metadata = {
   title: "İş Takip Sistemi",
   description: "Profesyonel İş Yönetim ve Takip Platformu — v2.0 Online & Offline",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/favicon.ico", apple: "/icon.svg" },
+  icons: { icon: "/favicon.ico", apple: "/icon-192.png" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "İş Takip",
+    startupImage: "/icon-512.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -14,7 +20,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#059669",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#059669" },
+    { media: "(prefers-color-scheme: dark)", color: "#065f46" },
+  ],
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -23,10 +33,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('ist_theme')||'light';var e=document.documentElement;e.setAttribute('data-theme',t);if(t!=='light')e.classList.add('theme-dark');}catch(x){}" }} />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+        {/* PWA: Tam ekran, tarayıcı çubuğu gizle */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-touch-fullscreen" content="yes" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+
+        {/* Android TWA / PWA için */}
+        <meta name="theme-color" content="#059669" />
+        <meta name="application-name" content="İş Takip" />
+        <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="text-gray-900 antialiased overscroll-none" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
         {children}

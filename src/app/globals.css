@@ -1,5 +1,32 @@
 @import "tailwindcss";
 
+/* PWA: Tam ekran standalone mod için safe-area desteği */
+html {
+  /* iOS status bar + notch alanını doldur */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Standalone modda (PWA olarak açıldığında) ek ayarlar */
+@media all and (display-mode: standalone) {
+  html, body {
+    /* Tarayıcı çubuğu olmadan tam ekran */
+    overflow: hidden;
+    height: 100dvh;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  body {
+    overflow-y: auto;
+  }
+  /* iOS pull-to-refresh engelleyin */
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
+
 @theme {
   --color-primary-50: #ecfdf5;
   --color-primary-100: #d1fae5;
