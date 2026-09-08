@@ -31,8 +31,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const title = "🔔 Hatırlatma";
       const text = `${updated.companyName} — ${body.reminder}`;
       try {
-        if (updated.assignedTo) await pushToUsers([updated.assignedTo], title, text);
-        else await pushToEmployees(title, text);
+        if (updated.assignedTo) await pushToUsers([updated.assignedTo], title, text, { type: "reminder" });
+        else await pushToEmployees(title, text, undefined, { type: "reminder" });
       } catch {}
     }
 

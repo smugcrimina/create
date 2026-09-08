@@ -1,69 +1,106 @@
-// İş Takip — Service Worker v2 (Web Push + Offline bildirim)
-// İçerik önbelleği YOK, bayat içerik olmaz
+// İş Takip — Service Worker v3
+// Web Push + WhatsApp tarzı zengin bildirimler
 
-const CACHE_NAME = "ist-push-v1";
+const SW_VERSION = "v3";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    Promise.all([
-      self.clients.claim(),
-      // Eski cache'leri temizle
-      caches.keys().then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-      ),
-    ])
-  );
+  event.waitUntil(self.clients.claim());
 });
 
-// ===== WEB PUSH: Uygulama kapalıyken sunucudan gelen bildirimler =====
+// ===== WEB PUSH: WhatsApp tarzı zengin bildirim =====
 self.addEventListener("push", (event) => {
-  let data = { title: "İş Takip", body: "Yeni bildirim", url: "/" };
+  let data = {
+    title: "İş Takip",
+    body: "Yeni bildirim",
+    url: "/",
+    type: "info", // info, job, complete, reminder
+  };
+
   try {
     if (event.data) {
       const parsed = event.data.json();
       data = { ...data, ...parsed };
     }
-  } catch (e) {
-    // JSON parse hatası — varsayılanı kullan
-  }
+  } catch (e) {}
+
+  // Bildirim tipine göre emoji ekle
+  const typeEmojis = {
+    job: "📋",
+    complete: "✅",
+    reminder: "⏰",
+    info: "🔔",
+  };
+  const emoji = typeEmojis[data.type] || "🔔";
+  const title = data.title || "İş Takip";
 
   const options = {
     body: data.body || "",
+    // Android'de bildirim ikonu: monokrom küçük ikon (status bar)
+    // badge = status bar'da görünen küçük ikon
     icon: "/icon-192.png",
     badge: "/icon-192.png",
-    vibrate: [200, 100, 200, 100, 200],
-    tag: data.tag || "istakip-" + Date.now(),
+
+    // WhatsApp tarzı: bildirim genişletilebilir
+    image: data.image || undefined,
+
+    // Titreşim pattern'i (WhatsApp benzeri)
+    vibrate: [100, 50, 100, 50, 200],
+
+    // Her bildirim benzersiz tag ile ayrı gösterilir
+    tag: data.tag || `ist-${data.type}-${Date.now()}`,
     renotify: true,
-    requireInteraction: true, // Kullanıcı kapatana kadar bildirim kalır
-    data: { url: data.url || "/" },
+
+    // Kullanıcı etkileşime girene kadar bildirim kalır
+    requireInteraction: true,
+
+    // Bildirim içinde gösterilecek aksiyonlar
     actions: [
-      { action: "open", title: "Aç" },
+      { action: "open", title: `${emoji} Görüntüle` },
       { action: "dismiss", title: "Kapat" },
     ],
+
+    // Bildirime tıklandığında açılacak URL
+    data: {
+      url: data.url || "/",
+      type: data.type,
+      timestamp: Date.now(),
+    },
+
+    // Bildirim zamanı
+    timestamp: data.timestamp || Date.now(),
+
+    // Sessiz bildirim değil
+    silent: false,
   };
 
-  event.waitUntil(self.registration.showNotification(data.title || "İş Takip", options));
+  // image undefined ise sil (undefined bırakmak hata verebilir)
+  if (!options.image) delete options.image;
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 // Bildirime tıklanınca uygulamayı öne getir / aç
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const action = event.action;
-  if (action === "dismiss") return;
+  if (event.action === "dismiss") return;
 
   const urlToOpen = (event.notification.data && event.notification.data.url) || "/";
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      // Zaten açık bir pencere varsa odakla
+      // Zaten açık bir pencere varsa odakla ve yönlendir
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && "focus" in client) {
-          client.postMessage({ type: "NOTIFICATION_CLICK", url: urlToOpen });
+          client.postMessage({
+            type: "NOTIFICATION_CLICK",
+            url: urlToOpen,
+            notificationType: event.notification.data?.type,
+          });
           return client.focus();
         }
       }
@@ -74,38 +111,6 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
-
-// Bildirim kapatıldığında (isteğe bağlı analitik)
-self.addEventListener("notificationclose", (event) => {
-  // İleride kullanım istatistikleri için
-});
-
-// Periyodik arka plan senkronizasyonu (destekleyen tarayıcılarda)
-self.addEventListener("periodicsync", (event) => {
-  if (event.tag === "check-new-jobs") {
-    event.waitUntil(checkForNewJobs());
-  }
-});
-
-async function checkForNewJobs() {
-  try {
-    const response = await fetch("/api/status");
-    if (response.ok) {
-      const data = await response.json();
-      if (data.pendingCount && data.pendingCount > 0) {
-        await self.registration.showNotification("İş Takip", {
-          body: `${data.pendingCount} bekleyen iş var`,
-          icon: "/icon-192.png",
-          badge: "/icon-192.png",
-          tag: "periodic-check",
-          data: { url: "/" },
-        });
-      }
-    }
-  } catch {
-    // Çevrimdışı veya hata — sessizce geç
-  }
-}
 
 // Push aboneliği değiştiğinde otomatik yenile
 self.addEventListener("pushsubscriptionchange", (event) => {
@@ -125,3 +130,29 @@ self.addEventListener("pushsubscriptionchange", (event) => {
       .catch(() => {})
   );
 });
+
+// Periyodik arka plan kontrolü
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "check-new-jobs") {
+    event.waitUntil(checkForNewJobs());
+  }
+});
+
+async function checkForNewJobs() {
+  try {
+    const response = await fetch("/api/status");
+    if (response.ok) {
+      const data = await response.json();
+      if (data.pendingCount && data.pendingCount > 0) {
+        await self.registration.showNotification("İş Takip", {
+          body: `📋 ${data.pendingCount} bekleyen iş var`,
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          tag: "periodic-check",
+          requireInteraction: false,
+          data: { url: "/", type: "info" },
+        });
+      }
+    }
+  } catch {}
+}

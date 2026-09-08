@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
       .returning();
 
     try {
-      await pushToEmployees("📋 Yeni İş Eklendi", newJob.companyName, currentUser.id);
+      await pushToEmployees("📋 Yeni İş Eklendi", newJob.companyName, currentUser.id, { type: "job" });
     } catch {}
 
     return NextResponse.json(newJob);

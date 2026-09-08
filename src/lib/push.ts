@@ -47,6 +47,10 @@ interface PushOptions {
   ttl?: number;
   /** Urgency: very-low, low, normal, high */
   urgency?: string;
+  /** Bildirim tipi: job, complete, reminder, info */
+  type?: "job" | "complete" | "reminder" | "info";
+  /** Bildirimde gösterilecek resim URL'si */
+  image?: string;
 }
 
 async function send(
@@ -69,6 +73,9 @@ async function send(
       body,
       url: options.url || "/",
       tag: options.tag,
+      type: options.type || "info",
+      image: options.image,
+      timestamp: Date.now(),
     });
 
     const pushOpts = {
