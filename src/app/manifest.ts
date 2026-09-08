@@ -39,5 +39,21 @@ export default function manifest(): MetadataRoute.Manifest {
         label: "İş Takip Ana Ekran",
       },
     ],
+    shortcuts: [
+      {
+        name: "Yeni İş Ekle",
+        short_name: "Yeni İş",
+        description: "Hızlıca yeni iş oluştur",
+        url: "/?shortcut=add-job",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+      {
+        name: "İşlerim",
+        short_name: "İşlerim",
+        description: "Atanan işleri görüntüle",
+        url: "/?shortcut=my-jobs",
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
+      },
+    ],
   };
 }
